@@ -3,7 +3,8 @@ function [] = scriptController
     centers = detectCirclesRANSAC(image, 27);
 
     figure;
-    imshow(image);
+    grey = rgb2gray(image);
+    imshow(edge(grey, "Canny", [0.045, 0.22]));
     hold on;
     disp(size(centers))
     % Plot the detected circles

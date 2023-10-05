@@ -1,29 +1,40 @@
 function [centers] = detectCirclesRANSAC(im, radius)
     %hyperparameters
-    ransac_threshold = 1;
+    ransac_threshold = 1.2;
+    max_points_in_circle = 3000;
+    min_points_needed = 110;
+    max_circles = 15;
 
     grey = rgb2gray(im);
     edges = edge(grey, "Canny", [0.045, 0.22]);
 
     [y, x] = find(edges);
-    
-    center = detectOneCircleRANSAC(y, x, radius, ransac_threshold);
-    circle_center = center;
-    disp(center)
-    distances = sqrt((x - circle_center(1)).^2 + (y - circle_center(2)).^2);
-    index = find(abs(distances - radius) <= ransac_threshold);
-    %centers = [x, y];
-    disp(size(index))
-    disp(size(im))
-    centers = [x(index), y(index)];
+    centers = [];
+    [center, inliers] = detectOneCircleRANSAC(y, x, radius, max_points_in_circle, ransac_threshold);
+    counter = 0;
+     while(size(inliers, 1) > min_points_needed)
+        centers = [centers; center];
+        edges(y(inliers),x(inliers)) = 0;
+        [y, x] = find(edges);
+        [center, inliers] = detectOneCircleRANSAC(y, x, radius, max_points_in_circle, ransac_threshold);
+        counter = counter + 1;
+        if(counter > max_circles)
+            return;
+        end
+     end
+     disp(size(center))
+     disp(size(inliers))
+     disp(counter)
 end
 
-function [center] = detectOneCircleRANSAC(y, x, radius, ransac_threshold)
+
+function [center, current_inliers] = detectOneCircleRANSAC(y, x, radius, max_points_in_circle, ransac_threshold)
     current_center = [];
+    current_inliers = [];
     number_inliers = 0;
     p = 0.99;
-    max_iteration = Inf;
-    number_points = size(x,1);
+    max_iteration = 20000;
+    number_points = max_points_in_circle;
     iteration = 0;
     while iteration < max_iteration
         sample_points = randperm(length(x), 3);
@@ -33,14 +44,14 @@ function [center] = detectOneCircleRANSAC(y, x, radius, ransac_threshold)
         circle_center = fit_circle(x_coords, y_coords, radius);
         distances = sqrt((x - circle_center(1)).^2 + (y - circle_center(2)).^2);
         inliers = find((abs(distances - radius) <= ransac_threshold));
-
         if(size(inliers, 1) > number_inliers)
             current_center = circle_center;
             number_inliers = size(inliers, 1);
-
+            
             w = number_inliers / number_points;
             max_iteration = log(1-p)/log(1-w^3);
-            disp(max_iteration);
+            current_inliers = inliers;
+           
         end
         iteration = iteration + 1;
     end

@@ -1,6 +1,6 @@
 function [] = scriptController
     image = imread("coins.jpg");
-    centers = detectCirclesRANSAC(image, 27);
+    centers = detectCirclesRANSAC(image, 28);
 
     figure;
     grey = rgb2gray(image);

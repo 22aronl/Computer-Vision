@@ -1,9 +1,9 @@
 function [centers] = detectCirclesRANSAC(im, radius)
     %hyperparameters
-    ransac_threshold = 1.2;
-    max_points_in_circle = 3000;
-    min_points_needed = 110;
-    max_circles = 15;
+    ransac_threshold = 1.050;
+    max_points_in_circle = 4500;
+    min_points_needed = 112;
+    max_circles = 25;
 
     grey = rgb2gray(im);
     edges = edge(grey, "Canny", [0.045, 0.22]);
@@ -12,8 +12,10 @@ function [centers] = detectCirclesRANSAC(im, radius)
     centers = [];
     [center, inliers] = detectOneCircleRANSAC(y, x, radius, max_points_in_circle, ransac_threshold);
     counter = 0;
+    holding = [];
      while(size(inliers, 1) > min_points_needed)
         centers = [centers; center];
+        holding = [holding; [center, size(inliers, 1)]];
         edges(y(inliers),x(inliers)) = 0;
         [y, x] = find(edges);
         [center, inliers] = detectOneCircleRANSAC(y, x, radius, max_points_in_circle, ransac_threshold);
@@ -22,8 +24,7 @@ function [centers] = detectCirclesRANSAC(im, radius)
             return;
         end
      end
-     disp(size(center))
-     disp(size(inliers))
+     disp(holding);
      disp(counter)
 end
 
@@ -41,7 +42,7 @@ function [center, current_inliers] = detectOneCircleRANSAC(y, x, radius, max_poi
         x_coords = x(sample_points);
         y_coords = y(sample_points);
 
-        circle_center = fit_circle(x_coords, y_coords, radius);
+        circle_center = fit_circle(x_coords, y_coords);
         distances = sqrt((x - circle_center(1)).^2 + (y - circle_center(2)).^2);
         inliers = find((abs(distances - radius) <= ransac_threshold));
         if(size(inliers, 1) > number_inliers)
@@ -59,8 +60,7 @@ function [center, current_inliers] = detectOneCircleRANSAC(y, x, radius, max_poi
 end
 
 %outputs x, y coords, respectively
-function [circle_center] = fit_circle(x_coords, y_coords, radius)
-    %least squares fit circle
+function [circle_center] = fit_circle(x_coords, y_coords)
     line_ones = ones(size(x_coords));
     A = [x_coords, y_coords, line_ones];
     b = x_coords.^2 + y_coords.^2;

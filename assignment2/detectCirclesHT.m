@@ -1,7 +1,7 @@
 function [centers] = detectCirclesHT(im, radius)
     %hyperparameters
-    theta_step = 0.075;
-    threshold = 34;
+    theta_step = 0.005;
+    threshold_percent = 0.60; %34
 
     grey = rgb2gray(im);
     edges = edge(grey, "Canny", [0.045, 0.22]);
@@ -20,7 +20,11 @@ function [centers] = detectCirclesHT(im, radius)
             end
         end
     end
-    
+    greatest = max(accumulator_matrix, [], "all");
+    threshold = greatest * threshold_percent;
+    normalized_accumulator_matrix = accumulator_matrix / max(accumulator_matrix(:));
+    colormap('hot');
+    imshow(normalized_accumulator_matrix, []);
     [rows, cols] = find(accumulator_matrix >= threshold);
     centers = [cols, rows];
 

@@ -1,38 +1,24 @@
 function [labelIm] = clusterPixels(Im, k)
-    data = reshape(rgb2hsv(Im), size(Im, 1)*size(Im,2), 3);
-    centroids = data(randperm(size(data, 1), k), :);
-    new_centroids = zeros(size(centroids));
-    maxIterations = 10000;
-    counter = 0;
-    for iter = 1:maxIterations
-        distances = zeros(size(data, 1), k);
-        for i = 1:k
-            centroid = centroids(i, :);
-            d = sum((data - centroid).^2, 2);
-            distances(:, i) = d;
-        end
-        [~, clusterAssignments] = min(distances, [], 2);
-        
-        
-        for i = 1:k
-            clusterPoints = data(clusterAssignments == i, :);
-            if ~isempty(clusterPoints)
-                new_centroids(i, :) = mean(clusterPoints);
-            end
-        end
-        if(new_centroids == centroids)
-            break;
-        end
-        centroids = new_centroids;
-        counter = counter + 1;
+    %hyperparameters
+    max_iterations = 1000;
+
+    feature_space = rgb2hsv(Im);
+    centers = zeros(k, size(feature_space, 3));
+    row_perm = randperm(size(feature_space, 1), k);
+    col_perm = randperm(size(feature_space, 2), k);
+
+    for i = 1:k
+        centers(i,:) = feature_space(row_perm(i), col_perm(i), :);
     end
     
-    % Display the final cluster centers
-    disp('Cluster Centers:');
-    disp(centroids);
-    disp(counter);
-    labelIm = reshape(clusterAssignments, size(Im, 1), size(Im, 2));
-    imshow(label2rgb(labelIm));
+    for iteration = 1:max_iterations
+        for xId = 1:size(feature_space, 1)
+            for yId = 1:size(feature_space, 2)
+                points = squeeze(feature_space(xId, yId, ))
+            end
+        end
+
+    end
 end
 
 function [labelIm] = clusterPixels2(Im, k)

@@ -1,21 +1,19 @@
 function [centers] = detectCirclesRANSAC(im, radius)
     %hyperparameters
-    ransac_threshold = 1.050;
-    max_points_in_circle = 4500;
+    ransac_threshold = 0.70;%1.050;
+    max_points_in_circle = 3000;
     min_points_needed = 112;
     max_circles = 25;
 
     grey = rgb2gray(im);
-    edges = edge(grey, "Canny", [0.045, 0.22]);
+    edges = edge(grey, "Canny", [0.1, 0.25]);
 
     [y, x] = find(edges);
     centers = [];
     [center, inliers] = detectOneCircleRANSAC(y, x, radius, max_points_in_circle, ransac_threshold);
     counter = 0;
-    holding = [];
      while(size(inliers, 1) > min_points_needed)
         centers = [centers; center];
-        holding = [holding; [center, size(inliers, 1)]];
         edges(y(inliers),x(inliers)) = 0;
         [y, x] = find(edges);
         [center, inliers] = detectOneCircleRANSAC(y, x, radius, max_points_in_circle, ransac_threshold);
@@ -24,7 +22,6 @@ function [centers] = detectCirclesRANSAC(im, radius)
             return;
         end
      end
-     disp(holding);
      disp(counter)
 end
 

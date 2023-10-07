@@ -32,7 +32,6 @@ function [labelIm] = clusterPixels(Im, k)
     disp(centroids);
     disp(counter);
     labelIm = reshape(clusterAssignments, size(Im, 1), size(Im, 2));
-    imshow(label2rgb(labelIm));
 end
 
 function [labelIm] = clusterPixels2(Im, k)

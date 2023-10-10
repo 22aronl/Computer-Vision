@@ -1,5 +1,5 @@
 function [] = scriptController
-    kMeansBoundry();
+    detectRANSAC();
 end
 
 function [] = kMeansBoundry()

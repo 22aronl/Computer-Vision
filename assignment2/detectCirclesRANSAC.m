@@ -1,7 +1,7 @@
 function [centers] = detectCirclesRANSAC(im, radius)
     %hyperparameters
     ransac_threshold = 0.70;%1.050;
-    max_points_in_circle = 3000;
+    max_points_in_circle = 5000;
     min_points_needed = 112;
     max_circles = 25;
 

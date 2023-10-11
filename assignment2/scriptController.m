@@ -3,14 +3,14 @@ function [] = scriptController
 end
 
 function [] = kMeansBoundry()
-    image = imread("gumballs.jpg");
-    lableIm = clusterPixels(image, 5);
+    image = imread("eagle.png");
+    lableIm = clusterPixels(image, 3);
     imshow(boundaryPixels(lableIm));
 end
 
 function [] = kMeansCluster()
-    image = imread("gumballs.jpg");
-    imshow(label2rgb(clusterPixels(image, 5)));
+    image = imread("eagle.png");
+    imshow(label2rgb(clusterPixels(image, 3)));
 end
 
 function [] = detectHT()

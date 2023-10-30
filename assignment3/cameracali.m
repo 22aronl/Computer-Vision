@@ -4,12 +4,8 @@ function [K] = cameracali(Coord2d, Coord3d)
        p = -p;
     
     end
-    disp(p);
 
     [K, R, t] = convert_projection(p);
-    disp(K);
-    disp(R);
-    disp(t);
 end
 
 function [K, R, t] = convert_projection(p)
@@ -34,7 +30,26 @@ function [K, R, t] = convert_projection(p)
     K = k;
     R = r;
     t = k\p(:,4);
-    disp(det(r));
+end
+
+function [M] = test(Points_2D, Points_3D)
+    n = size(Points_2D,1);
+	u = Points_2D(:,1);
+	v = Points_2D(:,2);
+	X = Points_3D(:,1);
+	Y = Points_3D(:,2);
+	Z = Points_3D(:,3);
+	A=[];
+
+	for i = 1:n
+	    r1=[X(i) Y(i) Z(i) 1 0 0 0 0 -u(i)*X(i) -u(i)*Y(i) -u(i)*Z(i) -u(i)];
+	    r2=[0 0 0 0 X(i) Y(i) Z(i) 1 -v(i)*X(i) -v(i)*Y(i) -v(i)*Z(i) -v(i)];
+	    A = [A; r1; r2];
+	end
+
+	[U,S,V] = svd(A);
+	M = V(:,end);
+	M = reshape(M,[],3)';
 end
 
 function [p] = estimate_projection_matrix(Coord2d, Coord3d)

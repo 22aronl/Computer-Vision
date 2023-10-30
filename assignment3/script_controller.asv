@@ -1,0 +1,25 @@
+function [] = script_controller()
+    coords = select_points("Calibration.jpg", 5);
+    disp(coords);
+    coords3d = [
+        [1 1 0];
+        [2 1 0];
+        [0 1 1];
+        [0 1 2];
+        [1 0 1]
+    ]
+
+    coords2d = 
+end
+
+function [coords] = select_points(calibration_file, num_points)
+    I = imread(calibration_file);
+
+    imshow(I);
+    [x, y] = ginput(num_points);
+    close;
+    points = detectSURFFeatures(rgb2gray(I));
+    locations = points.Location;
+    points = knnsearch(locations, [x y]);
+    coords = locations(points, :);
+end

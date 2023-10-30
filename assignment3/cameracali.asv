@@ -1,0 +1,39 @@
+function [K] = cameracali(Coord2d, Coord3d)
+    p = estimate_projection_matrix(Coord2d, Coord3d);
+    if(det(p(:, 1:3)) < 0)
+        p = -p;
+    end
+    disp(p)
+    [K, R, t] = convert_projection(p);
+    disp(K);
+    disp(R);
+    disp(t);
+
+    Coord2d = transpose(Coord2d);
+    Coord3d = transpose(Coord3d);
+    camProjection = estimateCameraProjection(Coord2d, Coord3d);
+    
+    disp(camProjection);
+end
+
+function [K, R, t] = convert_projection(p)
+    [K, R] = qr(p(:,1:3));
+    t = K\p(:,4:4);
+end
+
+function [p] = estimate_projection_matrix(Coord2d, Coord3d)
+    
+    N = size(Coord2d, 2);
+    M = zeros(2 * N, 12);
+    
+    for i = 1:N
+        lowerx_i = Coord2d(:, i);
+        upperx_i = Coord3d(:, i);
+        M(2 * i, :) = [upperx_i', 1, 0, 0, 0, 0, -lowerx_i(1) * [upperx_i' 1]];
+        M(2 * i + 1, :) = [0, 0, 0, 0, upperx_i', 1, lowerx_i(2) * [upperx_i' 1]];
+    end
+
+    [~, ~, V] = svd(M);
+    v = V(:,end);
+    p = reshape(v, 3, 4);
+end

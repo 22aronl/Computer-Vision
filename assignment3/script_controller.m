@@ -16,6 +16,7 @@ function [] = script_controller()
         [1.9770 1.7413];
         [1.7811 2.2540];
     ]);
+
     
     K = cameracali(coords2d, coords3d);
     relative_pose(K);

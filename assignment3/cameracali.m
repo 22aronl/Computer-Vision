@@ -6,6 +6,10 @@ function [K] = cameracali(Coord2d, Coord3d)
     end
 
     [K, R, t] = convert_projection(p);
+    disp(K);
+    disp(R);
+    disp(det(R));
+    disp(t);
 end
 
 function [K, R, t] = convert_projection(p)
@@ -66,6 +70,30 @@ function [p] = estimate_projection_matrix(Coord2d, Coord3d)
     [~, ~, V] = svd(M);
     v = V(:,end);
     p = reshape(v, [], 3)';
+end
+
+function P = get_camera_matrix(x, X)
+    A = getA(x, X);
+   [U,S, V] = svd(A);
+    P = V(:, size(V,2));
+    P = reshape(P, 4, 3)';
+end
+
+function A = getA(x, X)
+
+    n = size(x, 2);
+    h = 1;
+    for k =1:n
+        A(h, :) = [X(1, k) X(2, k) X(3, k) 1 ...
+            0 0 0 0 ...
+            -x(1, k)*X(1, k) -x(1, k)*X(2, k) ...
+            -x(1, k)*X(3, k) -x(1, k)];
+            A(h + 1, :) = [0 0 0 0 ...
+            X(1, k) X(2, k) X(3, k) 1 ...
+            -x(2, k)*X(1, k) -x(2, k)*X(2, k) ...
+            -x(2, k)*X(3, k) -x(2, k)];
+        h = h + 2;
+    end
 end
 
 function M = calculate_projection_matrix( Points_2D, Points_3D )

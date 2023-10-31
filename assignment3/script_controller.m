@@ -17,6 +17,24 @@ function [] = script_controller()
         [1.7811 2.2540];
     ]);
 
+    coords2d = transpose(1.0e+03 * [
+        [1.9705    1.8705];
+        [2.9465    1.4905];
+        [2.9465    1.9785];
+        [0.9625    2.0105];
+        [0.9585    1.5105];
+        [1.9745    1.3785;]
+        ]);
+
+    coords3d = transpose([
+        [0 0 0];
+        [0 0 8];
+        [0 3 8];
+        [8 3 0];
+        [8 0 0];
+        [6 0 6];
+    ]);
+
     
     K = cameracali(coords2d, coords3d);
     relative_pose(K);
@@ -36,7 +54,7 @@ function [] = relative_pose(K)
     [features1, validPoints1] = extractFeatures(grayImage1, points1);
     [features2, validPoints2] = extractFeatures(grayImage2, points2);
     
-    [indexPairs] = matchFeatures(features1, features2, MaxRatio=0.5, Unique=true);
+    [indexPairs] = matchFeatures(features1, features2, MaxRatio=0.3);
     
     matchedPoints1 = validPoints1(indexPairs(:, 1), :);
     matchedPoints2 = validPoints2(indexPairs(:, 2), :);
@@ -47,7 +65,7 @@ function [] = relative_pose(K)
 end
 
 function [] = generate_points()
-    coords = select_points("Calibration.jpg", 1);
+    coords = select_points("Calibration.jpg", 6);
     disp(coords);
 end
 

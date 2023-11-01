@@ -51,17 +51,17 @@ function [] = relative_pose(K)
     points1 = detectSIFTFeatures(grayImage1);
     points2 = detectSIFTFeatures(grayImage2);
 
-    [features1, validPoints1] = extractFeatures(grayImage1, points1);
-    [features2, validPoints2] = extractFeatures(grayImage2, points2);
+    [features1, validPoints1] = extractFeatures(grayImage1, points1, Method="SIFT");
+    [features2, validPoints2] = extractFeatures(grayImage2, points2, Method="SIFT");
     
-    [indexPairs] = matchFeatures(features1, features2, MaxRatio=0.15);
+    [indexPairs] = matchFeatures(features1, features2, MaxRatio=0.25, Unique=true);
     
     matchedPoints1 = validPoints1(indexPairs(:, 1), :);
     matchedPoints2 = validPoints2(indexPairs(:, 2), :);
     
     showMatchedFeatures(image1,image2,matchedPoints1,matchedPoints2, "montage");
-    [R, E, T] = relativepose(transpose(matchedPoints1.Location), transpose(matchedPoints2.Location), K);
-   
+    [R, T] = relativepose(transpose(matchedPoints1.Location), transpose(matchedPoints2.Location), K);
+    disp(det(R))
 end
 
 function [] = generate_points()
@@ -77,6 +77,29 @@ function [coords] = select_points(calibration_file, num_points)
     close;
     points = detectSURFFeatures(rgb2gray(I));
     locations = points.Location;
-    points = knnsearch(locations, [x y]);
+    points = nearest_neighbor(locations, [x y]);
     coords = locations(points, :);
+end
+
+function points = nearest_neighbor(locations, coords)
+    numCoords = size(coords, 1);
+    numLocations = size(locations, 1);
+
+    points = zeros(numCoords, size(locations, 2));
+
+    for i = 1:numCoords
+        minDistance = Inf;
+        nearestIndex = -1;
+
+        for j = 1:numLocations
+            distance = sqrt(sum((locations(j, :) - coords(i, :)).^2));
+
+            if distance < minDistance
+                minDistance = distance;
+                nearestIndex = j;
+            end
+        end
+
+        points(i, :) = locations(nearestIndex, :);
+    end
 end

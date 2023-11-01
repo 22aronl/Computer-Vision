@@ -6,7 +6,6 @@ function [K] = cameracali(Coord2d, Coord3d)
     end
    
     [K, R, t] = convert_projection(p);
-
 end
 
 function [K, R, t] = convert_projection(p)

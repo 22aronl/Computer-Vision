@@ -48,20 +48,20 @@ function [] = relative_pose(K)
     grayImage1 = rgb2gray(image1);
     grayImage2 = rgb2gray(image2);
 
-    points1 = detectSURFFeatures(grayImage1);
-    points2 = detectSURFFeatures(grayImage2);
+    points1 = detectSIFTFeatures(grayImage1);
+    points2 = detectSIFTFeatures(grayImage2);
 
     [features1, validPoints1] = extractFeatures(grayImage1, points1);
     [features2, validPoints2] = extractFeatures(grayImage2, points2);
     
-    [indexPairs] = matchFeatures(features1, features2, MaxRatio=0.3);
+    [indexPairs] = matchFeatures(features1, features2, MaxRatio=0.15);
     
     matchedPoints1 = validPoints1(indexPairs(:, 1), :);
     matchedPoints2 = validPoints2(indexPairs(:, 2), :);
     
-    relativepose(transpose(matchedPoints1.Location), transpose(matchedPoints2.Location), K);
-    %showMatchedFeatures(image1,image2,matchedPoints1,matchedPoints2);
-
+    showMatchedFeatures(image1,image2,matchedPoints1,matchedPoints2, "montage");
+    [R, E, T] = relativepose(transpose(matchedPoints1.Location), transpose(matchedPoints2.Location), K);
+   
 end
 
 function [] = generate_points()

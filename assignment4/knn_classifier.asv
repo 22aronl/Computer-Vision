@@ -1,0 +1,5 @@
+function [] = knn_classifier(train_data, train_label, test_img, k)
+    
+    distance = sqrt(sum(train_data - repmat()))
+
+end

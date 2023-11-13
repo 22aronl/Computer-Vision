@@ -1,0 +1,26 @@
+function [] = script_controller
+    [train_data, train_labels] = load_data();
+    disp(size(train_data));
+    disp(size(train_labels));
+    [test_data, test_labels] = load_test_data();
+    
+    predict = knn_classifier(train_data, train_labels, test_data(1:4,:), 10);
+    
+    for i = 1:size(predict())
+
+
+end
+
+function [train_data, train_labels] = load_data()
+    train_set_name = "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_1";
+    S = load(train_set_name);
+    train_data = S.data;
+    train_labels = S.labels;
+end
+
+function [test_data, test_labels] = load_test_data()
+    test_set_name = "B:\CS376_Images\assignment4\cifar-10-batches-mat\test_batch";
+    S = load(test_set_name);
+    test_data = S.data;
+    test_labels = S.labels;
+end

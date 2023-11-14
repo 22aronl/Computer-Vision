@@ -1,22 +1,18 @@
 function [test_classification] = adaboost_classifier(train_data, train_label, test_imgs, current_label)
-    num_haar_features = 200;
-    num_iterations = 10;
-    haar_threshold = 200;
+    num_haar_features = 1000;
+    num_iterations = 5;
+    %haar_threshold = 200;
     
     integral_image_list = zeros(32, 32, size(train_data,1));
     for i = 1:size(train_data,1)
         computed_integral_image = integral_image(train_data(i, :));
         integral_image_list(:, :, i) = computed_integral_image;
-
-        %disp(integral_image_list(1:5, 1:5, 1));
-        %disp(computed_integral_image(1:5, 1:5));
-        %disp(hi);
     end
 
     disp(size(integral_image_list));
 
     haar_list = generate_haar_features(num_haar_features);
-    haar_matrix = generate_haar_matrix(haar_list, integral_image_list, haar_threshold);
+    haar_matrix = generate_haar_matrix(haar_list, integral_image_list);
     disp(size(haar_matrix))
     binary_labels = (train_label == current_label);
     alpha_threshold = 0;
@@ -29,22 +25,22 @@ function [test_classification] = adaboost_classifier(train_data, train_label, te
     invalid_label = find(binary_labels ~= 1);
     weights(valid_label) = 1/size(valid_label, 1);
     weights(invalid_label) = 1/size(invalid_label, 1);
-    mult_binary_labels = repmat(binary_labels, [1, num_haar_features]);
    
     for i = 1:num_iterations
         disp(i)
         weights = weights / sum(weights);
-       
-        errors = sum(weights .* abs(haar_matrix - mult_binary_labels));
-        [min_error, error_index] = min(errors);
+        
+        [min_error, error_index, error_haar_threshold, error_parity] = find_optimal_haar(haar_matrix, weights, binary_labels);
+        %errors = sum(weights .* abs(haar_matrix - mult_binary_labels));
+        %[min_error, error_index] = min(errors);
         classifier{i} = haar_list{error_index};
-        prediction = haar_matrix(:, error_index);
+        classifier{i}.haar_threshold = error_haar_threshold;
+        classifier{i}.parity = error_parity;
 
-        if(min_error > 0.5)
-            classifier{i}.neg = -classifier{i}.neg;
-            prediction = ~prediction;
-            min_error = 1-min_error;
-            disp(classifier)
+        if(error_parity == 0)
+            prediction = haar_matrix(:, error_index) <= error_haar_threshold;
+        else
+            prediction = haar_matrix(:, error_index) > error_haar_threshold;
         end
 
         beta = min_error / (1 - min_error);
@@ -68,29 +64,64 @@ function [test_classification] = adaboost_classifier(train_data, train_label, te
         %disp(run_strong_classifier(classifier, alpha_list, integral_image(test_imgs(i, :)), haar_threshold));
         %test_classification(i) = run_strong_classifier(classifier, alpha_list, integral_image(train_data(i, :)), haar_threshold) >= alpha_threshold;
         test_img_list(:, :, i) = integral_image(test_imgs(i,:));
-        test_classification(i) = evaluate_haar_feature(test_img_list(:, :, i), classifier{1}, haar_threshold);
+        test_classification(i) = run_strong_classifier(classifier, alpha_list, test_img_list(:, :, i)) >= alpha_threshold;
+        %test_classification(i) = evaluate_haar_feature_complete(test_img_list(:, :, i), classifier{i}, haar_threshold);
 
     end
     
 end
 
-function val = run_strong_classifier(classifiers, alpha_list, image, haar_threshold)
+function [min_error, error_index, error_haar_threshold, error_parity] = find_optimal_haar(haar_matrix, weights, binary_labels)
+    num_haar_features = size(haar_matrix, 2);
+    num_thresholds = size(haar_matrix, 1);
+    min_error = 1;
+    for i = 1:num_haar_features
+        for j = 1:(num_thresholds-1)
+            haar_threshold = haar_matrix(j, i) + 1;
+            bin_matrix = haar_matrix(:, i) > haar_threshold;
+            error = sum(weights .* abs(bin_matrix - binary_labels));
+            parity = 1;
+            if(error > 0.5)
+                error = 1 - error;
+                parity = 0;
+            end
+
+            if(error < min_error)
+                min_error = error;
+                error_index = i;
+                error_haar_threshold = haar_threshold;
+                error_parity = parity;
+            end
+        end
+    end
+    disp(min_error);
+end
+
+function val = run_strong_classifier(classifiers, alpha_list, image)
     val = 0;
     for i = 1:size(classifiers, 1)
-        val = val + alpha_list(i) * evaluate_haar_feature(image, classifiers{i}, haar_threshold);
+        val = val + alpha_list(i) * evaluate_haar_feature_complete(image, classifiers{i});
     end
 end
 
-function haar_matrix = generate_haar_matrix(haar_list, img_list, haar_threshold)
+function haar_matrix = generate_haar_matrix(haar_list, img_list)
     haar_matrix = zeros(size(img_list, 3), size(haar_list, 2));
     for i = 1:size(img_list, 3)
         for j = 1:size(haar_list, 2)
-            haar_matrix(i, j) = evaluate_haar_feature(img_list(:, :, i), haar_list{j}, haar_threshold);
+            haar_matrix(i, j) = evaluate_haar_feature_incomplete(img_list(:, :, i), haar_list{j});
         end
     end
 end
 
-function val = evaluate_haar_feature(ar, haar_feature, haar_threshold)
+function val = evaluate_haar_feature_complete(ar, haar_feature)
+    if(haar_feature.parity == 0)
+        val = evaluate_haar_feature_incomplete(ar, haar_feature) <= haar_feature.haar_threshold;
+    else
+        val = evaluate_haar_feature_incomplete(ar, haar_feature) > haar_feature.haar_threshold;
+    end
+end
+
+function val = evaluate_haar_feature_incomplete(ar, haar_feature)
     ind = haar_feature.indicies;
     switch haar_feature.rectangle
         case 2
@@ -105,13 +136,13 @@ function val = evaluate_haar_feature(ar, haar_feature, haar_threshold)
                 + ar(ind(9, 1), ind(9, 2));
     end
 
-    if(val < 0)
-        haar_threshold = -haar_threshold;
-    end
-    val = val < haar_threshold;
-    if(haar_feature.neg == -1)
-        val = ~val;
-    end
+    %if(val < 0)
+    %    haar_threshold = -haar_threshold;
+    %end
+    %val = val < haar_threshold;
+    %if(haar_feature.neg == -1)
+    %    val = ~val;
+    %end
     %val = val * haar_feature.neg;
 end
 
@@ -125,7 +156,7 @@ end
 function haar_feature = generate_one_haar_feature()
     rectangle = [2 3 4];
     haar_feature.rectangle = rectangle(randi(numel(rectangle)));
-    haar_feature.neg = 1;
+    %haar_feature.neg = 1;
     is_horizontal = randi(2);
     
     size_max = 32;

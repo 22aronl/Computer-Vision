@@ -1,46 +1,96 @@
-function [] = adaboost_classifier(train_data, train_label, test_imgs, current_label)
-    num_haar_features = 50;
+function [test_classification] = adaboost_classifier(train_data, train_label, test_imgs, current_label)
+    num_haar_features = 200;
     num_iterations = 10;
-    threshold = 0.5;
+    haar_threshold = 200;
     
-    integral_image_list = zeros(size(train_data,1), 32, 32);
+    integral_image_list = zeros(32, 32, size(train_data,1));
     for i = 1:size(train_data,1)
-        integral_image_list(i, :, :) = integral_image(train_data(i, :));
+        computed_integral_image = integral_image(train_data(i, :));
+        integral_image_list(:, :, i) = computed_integral_image;
+
+        %disp(integral_image_list(1:5, 1:5, 1));
+        %disp(computed_integral_image(1:5, 1:5));
+        %disp(hi);
     end
 
+    disp(size(integral_image_list));
+
     haar_list = generate_haar_features(num_haar_features);
-    haar_matrix = generate_haar_matrix(haar_list, integral_image_list);
+    haar_matrix = generate_haar_matrix(haar_list, integral_image_list, haar_threshold);
+    disp(size(haar_matrix))
     binary_labels = (train_label == current_label);
-    mult_binary_labels = repmat(binary_labels, [1, size(binary_labels)]);
-    disp(mult_binary_labels(1:10, 1:10));
-    
     alpha_threshold = 0;
     alpha_list = zeros(1, num_iterations);
     classifier = {};
-    weights = zeros(1, size(train_data, 1));
+    weights = zeros(size(train_data, 1), 1);
 
     %set up weights
-
+    valid_label = find(binary_labels == 1);
+    invalid_label = find(binary_labels ~= 1);
+    weights(valid_label) = 1/size(valid_label, 1);
+    weights(invalid_label) = 1/size(invalid_label, 1);
+    mult_binary_labels = repmat(binary_labels, [1, num_haar_features]);
+   
     for i = 1:num_iterations
-        
+        disp(i)
         weights = weights / sum(weights);
+       
         errors = sum(weights .* abs(haar_matrix - mult_binary_labels));
+        [min_error, error_index] = min(errors);
+        classifier{i} = haar_list{error_index};
+        prediction = haar_matrix(:, error_index);
+
+        if(min_error > 0.5)
+            classifier{i}.neg = -classifier{i}.neg;
+            prediction = ~prediction;
+            min_error = 1-min_error;
+            disp(classifier)
+        end
+
+        beta = min_error / (1 - min_error);
+        alpha = log(1/beta);
+        
+
+        alpha_threshold = alpha_threshold + 0.5 * alpha;
+        alpha_list(i) = alpha;
+        
+        invert_prediction =  ~prediction;
+        weights = weights .* (beta .^(invert_prediction));
+    end
+    
+     
+    %save("classifiers_for_adaboost", "classifier", "alpha_list")
+
+    test_classification = zeros(size(test_imgs, 3), 1);
+    test_img_list = zeros(32, 32, size(test_imgs, 3));
+    for i = 1:size(test_imgs, 1)
+        %disp(run_strong_classifier(classifier, alpha_list, integral_image(test_imgs(i, :))));
+        %disp(run_strong_classifier(classifier, alpha_list, integral_image(test_imgs(i, :)), haar_threshold));
+        %test_classification(i) = run_strong_classifier(classifier, alpha_list, integral_image(train_data(i, :)), haar_threshold) >= alpha_threshold;
+        test_img_list(:, :, i) = integral_image(test_imgs(i,:));
+        test_classification(i) = evaluate_haar_feature(test_img_list(:, :, i), classifier{1}, haar_threshold);
 
     end
-
+    
 end
 
-function haar_matrix = generate_haar_matrix(haar_list, img_list)
-    haar_matrix = zeros(size(img_list, 1), size(haar_list, 1));
-    for i = 1:size(img_list, 1)
-        for j = 1:size(haar_list, 1)
-            haar_matrix(i, j) = evaluate_haar_feature(img_list(i, :, :), haar_list{j});
+function val = run_strong_classifier(classifiers, alpha_list, image, haar_threshold)
+    val = 0;
+    for i = 1:size(classifiers, 1)
+        val = val + alpha_list(i) * evaluate_haar_feature(image, classifiers{i}, haar_threshold);
+    end
+end
+
+function haar_matrix = generate_haar_matrix(haar_list, img_list, haar_threshold)
+    haar_matrix = zeros(size(img_list, 3), size(haar_list, 2));
+    for i = 1:size(img_list, 3)
+        for j = 1:size(haar_list, 2)
+            haar_matrix(i, j) = evaluate_haar_feature(img_list(:, :, i), haar_list{j}, haar_threshold);
         end
     end
 end
 
-function val = evaluate_haar_feature(ar, haar_feature)
-    ar = reshape(ar, [32, 32]);
+function val = evaluate_haar_feature(ar, haar_feature, haar_threshold)
     ind = haar_feature.indicies;
     switch haar_feature.rectangle
         case 2
@@ -54,6 +104,15 @@ function val = evaluate_haar_feature(ar, haar_feature)
                 + 4 * ar(ind(5, 1), ind(5, 2)) - 2 * ar(ind(6, 1), ind(6, 2)) + ar(ind(7, 1), ind(7, 2)) - 2 * ar(ind(8, 1), ind(8, 2)) ...
                 + ar(ind(9, 1), ind(9, 2));
     end
+
+    if(val < 0)
+        haar_threshold = -haar_threshold;
+    end
+    val = val < haar_threshold;
+    if(haar_feature.neg == -1)
+        val = ~val;
+    end
+    %val = val * haar_feature.neg;
 end
 
 function haar_features = generate_haar_features(num_features)
@@ -66,6 +125,7 @@ end
 function haar_feature = generate_one_haar_feature()
     rectangle = [2 3 4];
     haar_feature.rectangle = rectangle(randi(numel(rectangle)));
+    haar_feature.neg = 1;
     is_horizontal = randi(2);
     
     size_max = 32;
@@ -123,5 +183,5 @@ end
 function cum_array = integral_image(array)
     reshape_array = reshape(array, [32, 32, 3]);
     grey_array = rgb2gray(uint32(reshape_array));
-    cum_array = cumsum(cumsum(grey_array, 1), 2);
+    cum_array = cumsum(cumsum(grey_array, 2), 1);
 end

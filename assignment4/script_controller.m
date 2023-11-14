@@ -6,8 +6,20 @@ function [] = script_controller
     %train_labels = [1 2 3 3];
     %train_data = [[0 0 0]; [1 1 1]; [2 2 2]; [1 2 3]];
     %test_data = [1 2 1];
+    cat_to_choose = 1;
+    predict = adaboost_classifier(train_data, train_labels, test_data, cat_to_choose);
 
-    adaboost_classifier(train_data, train_labels, test_data, 1);
+    total_success = 0;
+    disp(size(predict));
+    for i = 1:size(predict, 2)
+        if(predict(i) == (test_labels(i) == cat_to_choose))
+            total_success = total_success + 1;
+        end
+    end
+
+    disp(total_success)
+    disp(size(predict, 2));
+    disp(total_success / size(predict, 2));
 end
 
 function [] = run_knn_classifier(train_data, train_labels, test_data, test_labels)
@@ -41,9 +53,9 @@ function [train_data, train_labels] = load_data()
         "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_4";
         "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_5"
         };
-    file_paths = {
-        "/Users/aaronlo/Downloads/cifar-10-batches-mat/data_batch_1";
-        };
+    %file_paths = {
+    %    "/Users/aaronlo/Downloads/cifar-10-batches-mat/data_batch_1";
+    %    };
     train_data = [];
     train_labels = [];
     for i = 1:numel(file_paths)
@@ -59,7 +71,7 @@ end
 
 function [test_data, test_labels] = load_test_data()
     test_set_name = "B:\CS376_Images\assignment4\cifar-10-batches-mat\test_batch";
-    test_set_name = "/Users/aaronlo/Downloads/cifar-10-batches-mat/test_batch";
+    %test_set_name = "/Users/aaronlo/Downloads/cifar-10-batches-mat/test_batch";
     S = load(test_set_name);
     test_data = S.data;
     test_labels = S.labels;

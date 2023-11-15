@@ -1,6 +1,6 @@
 function [classifier, alpha_list, alpha_threshold] = adaboost_classifier(train_data, train_label, current_label, haar_list)
     %num_haar_features = 100;
-    num_iterations = 10;
+    num_iterations = 30;
     %haar_threshold = 200;
 
     binary_labels = (train_label == current_label);

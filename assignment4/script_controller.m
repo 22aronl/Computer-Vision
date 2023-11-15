@@ -4,7 +4,7 @@ function [] = script_controller
 
     %run_knn_classifier(train_data, train_labels, test_data, test_labels);
     %disp(hi);
-
+    run_adaboost_classifier(train_data, train_labels, test_data, test_labels);
     
 end
 
@@ -121,9 +121,10 @@ function [train_data, train_labels] = load_data()
         "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_4";
         "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_5"
         };
-    %file_paths = {
-    %    "/Users/aaronlo/Downloads/cifar-10-batches-mat/data_batch_1";
-    %    };
+    file_paths = {
+        "/Users/aaronlo/Downloads/cifar-10-batches-mat/data_batch_1";
+        "/Users/aaronlo/Downloads/cifar-10-batches-mat/data_batch_2";
+        };
     train_data = [];
     train_labels = [];
     for i = 1:numel(file_paths)
@@ -138,8 +139,8 @@ function [train_data, train_labels] = load_data()
 end
 
 function [test_data, test_labels] = load_test_data()
-    test_set_name = "B:\CS376_Images\assignment4\cifar-10-batches-mat\test_batch";
-    %test_set_name = "/Users/aaronlo/Downloads/cifar-10-batches-mat/test_batch";
+    %test_set_name = "B:\CS376_Images\assignment4\cifar-10-batches-mat\test_batch";
+    test_set_name = "/Users/aaronlo/Downloads/cifar-10-batches-mat/test_batch";
     S = load(test_set_name);
     test_data = S.data;
     test_labels = S.labels;

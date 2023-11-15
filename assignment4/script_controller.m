@@ -73,6 +73,7 @@ end
 
 function [] = run_adaboost_classifier(train_data, train_labels, test_data, test_labels)
     [classifiers, alpha_lists, alpha_thresholds] = adaboost_classifier_multi(train_data, train_labels);
+    save("classifiers_values", "classifiers", "alpha_lists", "alpha_thresholds");
     predict = run_adaboost_multi(classifiers, alpha_lists, alpha_thresholds, test_data);
     cm = confusionchart(test_labels, uint8(predict));
     total_success = 0;

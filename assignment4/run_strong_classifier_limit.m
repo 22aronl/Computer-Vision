@@ -1,3 +1,5 @@
+%runs a strong classifier on the given images, but only runs the first
+%limit classifiers
 function test_classification = run_strong_classifier_limit(classifiers, alpha_list, alpha_thres, test_data, limit)
     test_classification = zeros(size(test_data, 3), 1);
     test_img_list = zeros(32, 32, size(test_data, 3));
@@ -9,6 +11,7 @@ function test_classification = run_strong_classifier_limit(classifiers, alpha_li
     end
 end
 
+%strong classifiers up to limit
 function val = run_strong_classifier_limit_one(classifiers, alpha_list, alpha_thres, image, limit)
     val = 0;
     for i = 1:limit

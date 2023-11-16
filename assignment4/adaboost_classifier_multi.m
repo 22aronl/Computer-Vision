@@ -1,3 +1,5 @@
+% generates the classifiers and alphalists for all the cases of the
+% adabooster multi
 function [classifiers, alpha_lists, alpha_thresholds] = adaboost_classifier_multi(train_data, train_label)
     
     classifiers = cell(10, 1);

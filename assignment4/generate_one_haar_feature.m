@@ -1,11 +1,13 @@
+%generates one random haar feature 
 function haar_feature = generate_one_haar_feature()
     rectangle = [2 3 4];
-    haar_feature.rectangle = rectangle(randi(numel(rectangle)));
-    %haar_feature.neg = 1;
-    is_horizontal = randi(2);
+    haar_feature.rectangle = rectangle(randi(numel(rectangle))); %how mnay rectangesl does it have
+    is_horizontal = randi(2); %if it is horizontal
     
     size_max = 32;
-
+    
+    %this enourmous switch case, it simple it just selecting the points
+    %that the haar feature will use
     switch haar_feature.rectangle
         case 2
             %A-2B+C-D+2E-F

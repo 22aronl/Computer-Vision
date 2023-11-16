@@ -4,7 +4,7 @@ function [] = script_controller
 
     %run_knn_classifier(train_data, train_labels, test_data, test_labels);
     %disp(hi);
-    run_adaboost_classifier(train_data, train_labels, test_data, test_labels);
+    run_adaboost_classifier_kfold(train_data, train_labels, test_data, test_labels);
     
 end
 
@@ -14,51 +14,46 @@ function [] = run_adaboost_classifier_kfold(train_data, train_labels, test_data,
     
     
     current_train = 1;
-    k_values = 10:10:500;
+    k_values = 10:10:1000;
     best_k = 10;
+    num_haar_features = 1200;
 
-    best_sum = 0;
     train_labels = train_labels == current_train;
     test_labels = test_labels == current_train;
+    total_sum = zeros(length(k_values),1);
+    for fold = 1:num_folds
+        disp(fold);
+        t = training(cv, fold);
+        train_indices = find(t == 1);
+        test_indices = find(t == 0);
+        
+        data = train_data(train_indices, :);
+        data_index = train_labels(train_indices);
+        test = train_data(test_indices, :);
+        test_index = train_labels(test_indices);
+        haar_list = generate_haar_features(num_haar_features);
+        [class, alpha_l, alpha_thresh] = adaboost_classifier(data, data_index, current_train, haar_list);
 
-    for i = 1:length(k_values)
-        current_k = k_values(i);
-        cur_sum = 0;
-        disp(i);
-        for fold = 1:num_folds
-            t = training(cv, fold);
-            train_indices = find(t == 1);
-            test_indices = find(t == 0);
-            
-            data = train_data(train_indices, :);
-            data_index = train_labels(train_indices);
-            test = train_data(test_indices, :);
-            test_index = train_labels(test_indices);
-            num_haar_features = current_k;
-            haar_list = generate_haar_features(num_haar_features);
-            [class, alpha_l, alpha_thresh] = adaboost_classifier2(data, data_index, current_train, haar_list, 10);
+        for i = 1:length(k_values)
+            current_k = k_values(i);
 
-            predict = run_ada_classifier(class, alpha_l, alpha_thresh, test);
+            predict = run_strong_classifier_limit(class, alpha_l, alpha_thresh, test, current_k);
             total_success = 0;
-            for j = 1:size(predict, 1)
-                if(predict(j) == test_index(j))
+            for j = 1:size(predict, 2)
+                if(predict(j) == test_labels(j))
                     total_success = total_success + 1;
                 end
             end
-
-            cur_sum = cur_sum + total_success;
+            total_sum(i) = total_sum(i) + total_success;
         end
 
-        if(cur_sum > best_sum)
-            best_sum = cur_sum;
-            best_k = current_k;
-        end
-        
     end
-
-    haar_list = generate_haar_features(best_k);
-    [class, alpha_l, alpha_thresh] = adaboost_classifier2(train_data, train_labels, current_train, haar_list, 10);
-    predict = run_ada_classifier(class, alpha_l, alpha_thresh, test_data);
+    disp(0);
+    [~, best_k] = max(total_sum);
+    current_k = k_values(i);
+    haar_list = generate_haar_features(num_haar_features);
+    [class, alpha_l, alpha_thresh] = adaboost_classifier(train_data, train_labels, current_train, haar_list);
+    predict = run_strong_classifier_limit(class, alpha_l, alpha_thresh, test_data, current_k);
     cm = confusionchart(uint8(test_labels), uint8(predict));
     total_success = 0;
     for i = 1:size(predict, 2)
@@ -70,7 +65,7 @@ function [] = run_adaboost_classifier_kfold(train_data, train_labels, test_data,
     disp(total_success)
     disp(size(predict, 2));
     disp(total_success / size(predict, 2));
-    disp(best_k);
+    disp(current_k);
 end
 
 function test_classification = run_ada_classifier(classifier, alpha_list, alpha_threshold, test_imgs)
@@ -150,6 +145,7 @@ end
 
 function [] = run_adaboost_classifier(train_data, train_labels, test_data, test_labels)
     [classifiers, alpha_lists, alpha_thresholds] = adaboost_classifier_multi(train_data, train_labels);
+    save("classifiers_values", "classifiers", "alpha_lists", "alpha_thresholds");
     predict = run_adaboost_multi(classifiers, alpha_lists, alpha_thresholds, test_data);
     cm = confusionchart(test_labels, uint8(predict));
     total_success = 0;
@@ -193,8 +189,8 @@ end
 function [train_data, train_labels] = load_data()
     file_paths = {
         "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_1";
-        "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_2";
-        "B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_3";
+        %"B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_2";
+        %"B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_3";
         %"B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_4";
         %"B:\CS376_Images\assignment4\cifar-10-batches-mat\data_batch_5"
         };

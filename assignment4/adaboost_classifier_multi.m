@@ -3,7 +3,7 @@ function [classifiers, alpha_lists, alpha_thresholds] = adaboost_classifier_mult
     classifiers = cell(10, 1);
     alpha_lists = cell(10, 1);
     alpha_thresholds = cell(10, 1);
-    num_haar_features = 1000;
+    num_haar_features = 1500;
     haar_list = generate_haar_features(num_haar_features);
 
     for i = 0:9

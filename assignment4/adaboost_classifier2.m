@@ -1,6 +1,5 @@
-function [classifier, alpha_list, alpha_threshold] = adaboost_classifier(train_data, train_label, current_label, haar_list)
+function [classifier, alpha_list, alpha_threshold] = adaboost_classifier2(train_data, train_label, current_label, haar_list, num_iterations)
     %num_haar_features = 100;
-    num_iterations = 40;
     %haar_threshold = 200;
 
     binary_labels = (train_label == current_label);
@@ -22,10 +21,10 @@ function [classifier, alpha_list, alpha_threshold] = adaboost_classifier(train_d
         computed_integral_image = integral_image(train_data(i, :));
         integral_image_list(:, :, i) = computed_integral_image;
     end
-    disp(size(integral_image_list));
+    %disp(size(integral_image_list));
 
     haar_matrix = generate_haar_matrix(haar_list, integral_image_list);
-    disp(size(haar_matrix));
+    %disp(size(haar_matrix));
     binary_labels = (train_label == current_label);
     alpha_threshold = 0;
     alpha_list = zeros(1, num_iterations);
@@ -39,7 +38,7 @@ function [classifier, alpha_list, alpha_threshold] = adaboost_classifier(train_d
     weights(invalid_label) = 1/size(invalid_label, 1);
     weights = double(weights);
     for i = 1:num_iterations
-        disp(i);
+        %disp(i);
         weights = weights / sum(weights);
         
         [min_error, error_index, error_haar_threshold, error_parity] = find_optimal_haar(haar_matrix, weights, binary_labels);
